@@ -26,13 +26,19 @@ const register = async (req, res) => {
   }
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravavatar.url(email)
+    const payload = {
+    id: user._id
+  }
 
   const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL });
+  const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"})
+  await User.findByIdAndUpdate(user._id, { token })
   
   res.status(201).json({
+    token,
     user: {
+      name: newUser.name ?? '',
       email: newUser.email,
-      subscription: newUser.subscription
     }
     
   })
@@ -54,8 +60,8 @@ const login = async (req, res) => {
     id: user._id
   }
   const filteredUser = {
+    name: user.name ?? '',
     email: user.email,
-    subscription: user.subscription
   }
 
   const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"})
