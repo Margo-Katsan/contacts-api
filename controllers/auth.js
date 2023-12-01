@@ -16,7 +16,7 @@ const { User } = require('../models/user');
 
 const { SECRET_KEY } = process.env;
 
-const avatarsDir = path.join(__dirname, "../", "public", "avatars")
+const avatarsDir = path.join(__dirname, "../", "public", "avatars", "users")
 
 const register = async (req, res) => {
   const { email, password } = req.body;
@@ -27,12 +27,12 @@ const register = async (req, res) => {
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravavatar.url(email)
     const payload = {
-    id: user._id
+    email,
   }
 
   const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL });
   const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"})
-  await User.findByIdAndUpdate(user._id, { token })
+  await User.findOneAndUpdate({ email }, {token})
   
   res.status(201).json({
     token,
@@ -103,6 +103,7 @@ const updateSubscription = async (req, res) => {
 
 const updateAvatar = async (req, res) => {
   const { _id } = req.user;
+  console.log(req.file)
   const { path: tempUpload, originalname } = req.file;
   const filename = `${_id}_${originalname}`
   const resultUpload = path.join(avatarsDir, filename);
@@ -112,7 +113,7 @@ const updateAvatar = async (req, res) => {
 
   await fs.unlink(tempUpload);
 
-  const avatarURL = path.join("avatars", filename);
+  const avatarURL = path.join("avatars", "users", filename);
   await User.findByIdAndUpdate(_id, { avatarURL });
 
   res.json({avatarURL})
