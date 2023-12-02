@@ -10,15 +10,62 @@ const path = require("path");
 
 const avatarsDir = path.join(__dirname, "../", "public", "avatars", "contacts")
 
+const setNextBirthday = (birthday, req) => {
+
+    const today = new Date();
+    
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+    const birthdayMonth = birthday.getMonth() + 1;
+    const todayDay = today.getDate();
+    const birthdayDay = birthday.getDate();
+ 
+    if (todayMonth === birthdayMonth) {
+      
+      if (todayDay - birthdayDay > 0) {
+        req.body.nextBirthday = `${todayYear+1}-${birthdayMonth}-${birthdayDay}`
+      }
+      else {
+        req.body.nextBirthday = `${todayYear}-${birthdayMonth}-${birthdayDay}`
+      }
+    }
+    if (todayMonth - birthdayMonth > 0) {
+      req.body.nextBirthday = `${todayYear+1}-${birthdayMonth}-${birthdayDay}`
+    }
+    else {
+      req.body.nextBirthday = `${todayYear}-${birthdayMonth}-${birthdayDay}`
+    }
+}
+
 const getAll = async (req, res, next) => {
   const { _id: owner } = req.user;
-  const { page = 1, limit = 10, favorite } = req.query;
+  const { page = 1, limit = 10, favorite, sort } = req.query;
   const skip = (page - 1) * limit;
   const filter = { owner };
+  let result;
   if (favorite) {
     filter.favorite = favorite
   }
-  const result = await Contact.find(filter, "-createdAt -updatedAt", {skip, limit}).populate("owner", "name email");
+ 
+    switch(sort) {
+      case "name":
+        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({name: 1})
+        break;
+      case "last":
+        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({createdAt: -1})
+        break;
+      
+      case "birthday":
+        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({nextBirthday: 1})
+        break;
+      default:
+        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email");
+        break;
+
+  }
+  
+  
+  
   res.json(result);
 }
 
@@ -32,7 +79,16 @@ const getById = async (req, res, next) => {
 }
 
 const add = async (req, res, next) => {
-  const {_id: owner} = req.user
+  const { _id: owner } = req.user
+  
+  if (req.body.birthday) {
+    setNextBirthday(new Date(req.body.birthday), req);
+  }
+  
+  else {
+    req.body.nextBirthday = `${new Date().getFullYear() + 2}`
+  }
+
   const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 }

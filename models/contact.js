@@ -22,7 +22,13 @@ const contactSchema = new Schema({
     ref: "user",
     required: true
   },
-  avatarURL: String
+  avatarURL: String,
+  birthday: {
+    type: Date,
+  },
+  nextBirthday: {
+    type: Date,
+  }
 }, { versionKey: false, timestamps: true });
 
 contactSchema.post("save", handleMongooseError);
