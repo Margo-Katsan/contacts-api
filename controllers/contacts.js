@@ -147,14 +147,20 @@ const updateAvatar = async (req, res) => {
     allowed_formats: ['png', 'jpg', 'jpeg', 'svg', 'ico', 'jfif', 'webp', 'gif']
 
   }, async (error, result) => {
-    console.log(result, error);
+    try {
+      console.log(result, error);
 
     await fs.unlink(tempUpload);
 
 
-  await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
+  const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
 
-  res.json("Succsec")
+  res.json(updatedContact)
+    }
+    catch (error) {
+      
+    }
+    
   
 });
 
