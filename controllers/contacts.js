@@ -8,7 +8,17 @@ const fs = require("fs/promises")
 
 const path = require("path");
 
-const avatarsDir = path.join(__dirname, "../", "public", "avatars", "contacts")
+const cloudinary = require("cloudinary").v2;
+
+// const avatarsDir = path.join(__dirname, "../", "public", "avatars", "contacts")
+
+const {CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET}=process.env
+      
+cloudinary.config({ 
+  cloud_name: CLOUDINARY_CLOUD_NAME, 
+  api_key: CLOUDINARY_API_KEY, 
+  api_secret: CLOUDINARY_API_SECRET
+});
 
 const setNextBirthday = (birthday, req) => {
 
@@ -130,17 +140,27 @@ const updateAvatar = async (req, res) => {
   const { contactId } = req.params;
   const { path: tempUpload, originalname } = req.file;
   const filename = `${contactId}_${originalname}`
-  const resultUpload = path.join(avatarsDir, filename);
 
-  const image = await Jimp.read(tempUpload);
-  await image.resize(250, 250).writeAsync(resultUpload);
+  await cloudinary.uploader.upload(tempUpload, {
+    upload_preset: "v2zggqv6",
+    public_id: filename,
+    allowed_formats: ['png', 'jpg', 'jpeg', 'svg', 'ico', 'jfif', 'webp', 'gif']
 
-  await fs.unlink(tempUpload);
+  }, async (error, result) => {
+    console.log(result, error);
 
-  const avatarURL = path.join("avatars", "contacts", filename);
-  await Contact.findByIdAndUpdate(contactId, { avatarURL });
+    await fs.unlink(tempUpload);
 
-  res.json({avatarURL})
+
+  await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
+
+  res.json("Succsec")
+  
+});
+
+
+
+  
 }
 
 module.exports = {
