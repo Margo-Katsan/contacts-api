@@ -163,7 +163,7 @@ const withoutFileExtension = filename.split('.')[0];
     await fs.unlink(tempUpload);
 
 
-      const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
+      const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url }, {new: true});
       
   res.json(updatedContact)
     }
