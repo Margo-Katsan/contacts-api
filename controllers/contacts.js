@@ -1,16 +1,17 @@
+const { error } = require("console");
 const { HttpError, ctrlWrapper } = require("../helpers");
 
 const { Contact } = require('../models/contact');
 
-const Jimp = require("jimp");
+
 
 const fs = require("fs/promises")
 
-const path = require("path");
+
 
 const cloudinary = require("cloudinary").v2;
 
-// const avatarsDir = path.join(__dirname, "../", "public", "avatars", "contacts")
+
 
 const {CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET}=process.env
       
@@ -109,10 +110,14 @@ const deleteById = async (req, res, next) => {
   if (!result) {
     throw HttpError(404, "Not found");
   }
-  if (result.avatarURL) {
-    const avatarPath = path.join(__dirname, "../","public", result.avatarURL.split("/").pop());
-    await fs.unlink(avatarPath);
-  }
+
+    const parts = result.avatarURL.split('/');
+
+    const publicId = parts[parts.length - 1];
+    const withoutFileExtension = publicId.split('.')[0];
+    
+  await cloudinary.uploader.destroy(`contacts_avatars/${withoutFileExtension}`, { type: 'upload', resource_type: 'image' })
+
   res.json({
     message: "contact deleted"
   });
@@ -139,22 +144,27 @@ const updateStatusContact = async (req, res, next) => {
 const updateAvatar = async (req, res) => {
   const { contactId } = req.params;
   const { path: tempUpload, originalname } = req.file;
+  
+
   const filename = `${contactId}_${originalname}`
+const withoutFileExtension = filename.split('.')[0];
 
   await cloudinary.uploader.upload(tempUpload, {
     upload_preset: "v2zggqv6",
-    public_id: filename,
+    public_id: withoutFileExtension ,
     allowed_formats: ['png', 'jpg', 'jpeg', 'svg', 'ico', 'jfif', 'webp', 'gif']
 
   }, async (error, result) => {
     try {
-      console.log(result, error);
-
+     
+      if (error) {
+        throw HttpError(404, "A")
+      }
     await fs.unlink(tempUpload);
 
 
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
-
+      const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url });
+      
   res.json(updatedContact)
     }
     catch (error) {
