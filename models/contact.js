@@ -34,6 +34,7 @@ contactSchema.post("save", handleMongooseError);
 const addSchema = Joi.object({
   name: Joi.string().required(),
   phone: Joi.string().required(),
+  birthday: Joi.string(),
   favorite: Joi.boolean()
 })
 

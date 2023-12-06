@@ -63,7 +63,7 @@ const getAll = async (req, res, next) => {
         result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({name: 1})
         break;
       case "last":
-        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({createdAt: -1})
+        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({updatedAt: -1})
         break;
       
       case "birthday":
@@ -111,13 +111,16 @@ const deleteById = async (req, res, next) => {
   if (!result) {
     throw HttpError(404, "Not found");
   }
-
+  if (result.avatarURL) {
     const parts = result.avatarURL.split('/');
 
     const publicId = parts[parts.length - 1];
     const withoutFileExtension = publicId.split('.')[0];
     
   await cloudinary.uploader.destroy(`contacts_avatars/${withoutFileExtension}`, { type: 'upload', resource_type: 'image' })
+  }
+
+    
 
   res.json(result);
 }
