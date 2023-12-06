@@ -34,14 +34,14 @@ contactSchema.post("save", handleMongooseError);
 const addSchema = Joi.object({
   name: Joi.string().required(),
   phone: Joi.string().required(),
-  birthday: Joi.string(),
+  birthday: Joi.date(),
   favorite: Joi.boolean()
 })
 
 const updateSchema = Joi.object({
   name: Joi.string(),
   phone: Joi.string(),
-  birthday: Joi.string()
+  birthday: Joi.date()
 })
 
 const updateFavoriteSchema = Joi.object({

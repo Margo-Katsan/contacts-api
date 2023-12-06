@@ -60,17 +60,17 @@ const getAll = async (req, res, next) => {
  
     switch(sort) {
       case "name":
-        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({name: 1})
+        result = await Contact.find(filter, { skip, limit }).populate("owner", "name email").sort({name: 1})
         break;
       case "last":
-        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({updatedAt: -1})
+        result = await Contact.find(filter, { skip, limit }).populate("owner", "name email").sort({updatedAt: -1})
         break;
       
       case "birthday":
-        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email").sort({nextBirthday: 1})
+        result = await Contact.find(filter, { skip, limit }).populate("owner", "name email").sort({nextBirthday: 1})
         break;
       default:
-        result = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit }).populate("owner", "name email");
+        result = await Contact.find(filter, { skip, limit }).populate("owner", "name email");
         break;
 
   }
