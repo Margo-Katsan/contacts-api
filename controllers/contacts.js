@@ -125,6 +125,15 @@ const deleteById = async (req, res, next) => {
 
 const updateById = async (req, res, next) => {
   const { contactId } = req.params;
+
+  if (req.body.birthday) {
+    setNextBirthday(new Date(req.body.birthday), req);
+  }
+  
+  else {
+    req.body.nextBirthday = `${new Date().getFullYear() + 2}`
+  }
+  
   const result = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
   if (!result) {
     throw HttpError(404, "Not found")
