@@ -107,6 +107,7 @@ const add = async (req, res, next) => {
 const deleteById = async (req, res, next) => {
   const { contactId } = req.params;
   const result = await Contact.findByIdAndRemove(contactId);
+
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -118,9 +119,7 @@ const deleteById = async (req, res, next) => {
     
   await cloudinary.uploader.destroy(`contacts_avatars/${withoutFileExtension}`, { type: 'upload', resource_type: 'image' })
 
-  res.json({
-    message: "contact deleted"
-  });
+  res.json(result);
 }
 
 const updateById = async (req, res, next) => {
