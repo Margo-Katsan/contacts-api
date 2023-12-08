@@ -1,17 +1,10 @@
-const { error } = require("console");
 const { HttpError, ctrlWrapper } = require("../helpers");
 
 const { Contact } = require('../models/contact');
 
-
-
 const fs = require("fs/promises")
 
-
-
 const cloudinary = require("cloudinary").v2;
-
-
 
 const {CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET}=process.env
       
@@ -21,13 +14,17 @@ cloudinary.config({
   api_secret: CLOUDINARY_API_SECRET
 });
 
-const setNextBirthday = (birthday, req) => {
+const setNextBirthday = (req) => {
 
+  if (req.body.birthday) {
+    const birthday = new Date(req.body.birthday);
     const today = new Date();
     
-    const todayMonth = today.getMonth() + 1;
     const todayYear = today.getFullYear();
+
+    const todayMonth = today.getMonth() + 1;
     const birthdayMonth = birthday.getMonth() + 1;
+  
     const todayDay = today.getDate();
     const birthdayDay = birthday.getDate();
  
@@ -46,6 +43,12 @@ const setNextBirthday = (birthday, req) => {
     else {
       req.body.nextBirthday = `${todayYear}-${birthdayMonth}-${birthdayDay}`
     }
+  }
+  else {
+    req.body.nextBirthday = `${new Date().getFullYear() + 2}`
+  }
+
+    
 }
 
 const getAll = async (req, res, next) => {
@@ -54,28 +57,25 @@ const getAll = async (req, res, next) => {
   const skip = (page - 1) * limit;
   const filter = { owner };
   let result;
+
   if (favorite) {
-    filter.favorite = favorite
+    filter.favorite = favorite;
   }
  
-    switch(sort) {
-      case "name":
-        result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({name: 1})
-        break;
-      case "last":
-        result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({updatedAt: -1})
-        break;
-      
-      case "birthday":
-        result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({nextBirthday: 1})
-        break;
-      default:
-        result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email");
-        break;
-
+  switch(sort) {
+    case "name":
+      result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({name: 1})
+      break;
+    case "last":
+      result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({updatedAt: -1})
+      break;
+    case "birthday":
+      result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email").sort({nextBirthday: 1})
+      break;
+    default:
+      result = await Contact.find(filter, "-createdAt", { skip, limit }).populate("owner", "name email");
+      break;
   }
-  
-  
   
   res.json(result);
 }
@@ -92,13 +92,8 @@ const getById = async (req, res, next) => {
 const add = async (req, res, next) => {
   const { _id: owner } = req.user
   
-  if (req.body.birthday) {
-    setNextBirthday(new Date(req.body.birthday), req);
-  }
-  
-  else {
-    req.body.nextBirthday = `${new Date().getFullYear() + 2}`
-  }
+  setNextBirthday(req);
+
 
   const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
@@ -111,16 +106,15 @@ const deleteById = async (req, res, next) => {
   if (!result) {
     throw HttpError(404, "Not found");
   }
+
   if (result.avatarURL) {
     const parts = result.avatarURL.split('/');
 
     const publicId = parts[parts.length - 1];
     const withoutFileExtension = publicId.split('.')[0];
     
-  await cloudinary.uploader.destroy(`contacts_avatars/${withoutFileExtension}`, { type: 'upload', resource_type: 'image' })
+    await cloudinary.uploader.destroy(`contacts_avatars/${withoutFileExtension}`, { type: 'upload', resource_type: 'image' })
   }
-
-    
 
   res.json(result);
 }
@@ -128,13 +122,7 @@ const deleteById = async (req, res, next) => {
 const updateById = async (req, res, next) => {
   const { contactId } = req.params;
 
-  if (req.body.birthday) {
-    setNextBirthday(new Date(req.body.birthday), req);
-  }
-  
-  else {
-    req.body.nextBirthday = `${new Date().getFullYear() + 2}`
-  }
+  setNextBirthday(req);
   
   const result = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
   if (!result) {
@@ -155,39 +143,28 @@ const updateStatusContact = async (req, res, next) => {
 const updateAvatar = async (req, res) => {
   const { contactId } = req.params;
   const { path: tempUpload, originalname } = req.file;
-  
-
   const filename = `${contactId}_${originalname}`
-const withoutFileExtension = filename.split('.')[0];
+  const withoutFileExtension = filename.split('.')[0];
 
   await cloudinary.uploader.upload(tempUpload, {
     upload_preset: "v2zggqv6",
     public_id: withoutFileExtension ,
     allowed_formats: ['png', 'jpg', 'jpeg', 'svg', 'ico', 'jfif', 'webp', 'gif']
-
   }, async (error, result) => {
     try {
-     
       if (error) {
-        throw HttpError(404, "A")
+        throw HttpError(404, "Not found")
       }
-    await fs.unlink(tempUpload);
+      await fs.unlink(tempUpload);
 
-
-      const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url }, {new: true});
+      const updatedContact = await Contact.findByIdAndUpdate(contactId, { avatarURL: result.url }, { new: true });
       
-  res.json(updatedContact)
+      res.json(updatedContact)
     }
     catch (error) {
       
     }
-    
-  
-});
-
-
-
-  
+  });
 }
 
 module.exports = {

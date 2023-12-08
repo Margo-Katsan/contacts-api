@@ -24,15 +24,18 @@ const register = async (req, res) => {
   if (user) {
     throw HttpError(409, "Email already in use")
   }
-  const hashPassword = await bcrypt.hash(password, 10);
+  let hashPassword;
+try {
+  hashPassword = await bcrypt.hash(password, 10);
+} catch (error) {
+  throw HttpError(500, "Internal Server Error");
+}
   const avatarURL = gravavatar.url(email)
-    const payload = {
-    email,
-  }
+ 
 
   const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL });
-  const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"})
-  await User.findOneAndUpdate({ email }, {token})
+  const token = jwt.sign({id: newUser._id }, SECRET_KEY, {expiresIn: "23h"})
+  await User.findOneAndUpdate(newUser._id, {token})
   
   res.status(201).json({
     token,
