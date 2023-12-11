@@ -94,9 +94,7 @@ const add = async (req, res, next) => {
   
   setNextBirthday(req);
 
-  const [day, month, year] = req.body.birthday.split('-');
-  req.body.birthday = new Date(`${year}-${month}-${day}`);
-  
+
   const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 }
@@ -125,9 +123,6 @@ const updateById = async (req, res, next) => {
   const { contactId } = req.params;
 
   setNextBirthday(req);
-
-  const [day, month, year] = req.body.birthday.split('-');
-  req.body.birthday = new Date(`${year}-${month}-${day}`);
 
   const result = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
   if (!result) {
